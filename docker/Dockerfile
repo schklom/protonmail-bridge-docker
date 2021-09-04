@@ -5,8 +5,12 @@ RUN apt-get update && apt-get install -y libsecret-1-dev
 
 # Build
 WORKDIR /build/
-COPY build.sh VERSION /build/
-RUN bash build.sh
+COPY VERSION /build/
+
+RUN VERSION=$(cat VERSION) && \
+    curl -L https://github.com/ProtonMail/proton-bridge/archive/refs/tags/${VERSION}.tar.gz \
+        | tar zx --strip-component 1 && \
+    make build-nogui
 
 FROM ubuntu:bionic
 LABEL maintainer="Xiaonan Shen <s@sxn.dev>"
@@ -14,7 +18,7 @@ LABEL maintainer="Xiaonan Shen <s@sxn.dev>"
 EXPOSE 25/tcp
 EXPOSE 143/tcp
 
-# Install dependencies and protonmail bridge
+# Install dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         expect socat pass libsecret-1-0 ca-certificates \
