@@ -1,0 +1,4 @@
+image_version: 0.1
+protonmail_version:
+  latest: v1.8.7  # Latest stable version
+  pre: v1.8.9  # Latest preview version

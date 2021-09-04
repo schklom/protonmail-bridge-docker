@@ -1,0 +1,98 @@
+#!/usr/bin/expect -f
+
+set timeout 15;
+
+spawn proton-bridge -cli {*}$argv ;
+
+# wait for inital prompt
+expect {
+  ">>> " {
+    # protonmail-bridge started without error, do nothing
+  }
+
+  timeout {
+    puts "Timed out"
+    exit 2
+  }
+}
+
+send "login\n"
+expect {
+  "Username: " {
+    # login start, enter username
+  }
+
+  timeout {
+    puts "Timed out"
+    exit 2
+  }
+}
+
+send "$::env(PROTONMAIL_USERNAME)\n"
+expect {
+  "Password: " {
+    # username entered, enter password
+  }
+
+  timeout {
+    puts "Timed out"
+    exit 2
+  }
+}
+
+stty -echo
+sleep 1
+send "$::env(PROTONMAIL_PASSWORD)\n"
+stty echo
+expect {
+  "was added successfully." {
+    # login ok
+  }
+
+  "Two factor code: " {
+    # 2FA enabled, enter OTP
+    if ![info exists ::env(PROTONMAIL_OTP)] {
+      puts "\n2FA enabled but PROTONMAIL_OTP is not set. Exiting"
+      exit 1
+    }
+    send "$::env(PROTONMAIL_OTP)\n"
+    expect {
+      "was added successfully." {
+        # login ok
+      }
+
+      "Server error" {
+        # login failed
+        exit 1
+      }
+
+      timeout {
+        puts "Timed out"
+        exit 2
+      }
+    }
+  }
+
+  "Server error" {
+    # login failed
+    exit 1
+  }
+
+  timeout {
+    puts "Timed out"
+    exit 2
+  }
+}
+
+send "info\n"
+expect {
+  "Configuration for " {
+    # successfully got info. Wait for printing
+    sleep 1
+  }
+
+  timeout {
+    puts "Timed out"
+    exit 2
+  }
+}

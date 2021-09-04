@@ -1,14 +1,10 @@
 #!/bin/bash
 
-set -ex
+set -e
 
-id
-# Go to current user's homedir
-cd
-echo $PWD
-
-# Initialize
-if [[ $1 == init ]]; then
+# Generate gpg keys
+if [ ! -f ${HOME}/.gnupg ]; then
+    echo "Generateing gpg keys..."
     # set GNUPGHOME as a workaround for
     #
     #   gpg-agent[106]: error binding socket to '/root/.gnupg/S.gpg-agent': File name too long
@@ -17,42 +13,50 @@ if [[ $1 == init ]]; then
     #
     # ref: https://dev.gnupg.org/T2964
     #
-
-    export GNUPGHOME="${GNUPGHOME:-"/tmp/gnupg"}"
-    rm -rf "${GNUPGHOME}" || true
-    mkdir -p "${GNUPGHOME}"
-    chmod 0700 "${GNUPGHOME}"
-
-    # Initialize pass
-    gpg --generate-key --batch /protonmail/gpgparams
-    pass init "${KEY_ID:-"pass-key"}"
-
-    # Login
-    do_login="/protonmail/proton-bridge --cli $*"
-    if [[ "x${PROTONMAIL_USERNAME}" != "x" && "x${PROTONMAIL_PASSWORD}" != "x" ]]; then
-        # automated login if both username and password are set
-        do_login="/protonmail/login.exp ${do_login}"
-    fi
-
-    $do_login
-
-    # copy gnupg files to default path
-    mkdir -p /root/.gnupg
-    kill "$(pidof gpg-agent)"
-    cp -a "${GNUPGHOME}/" /root/.gnupg/
-
-else
-
-    # socat will make the conn appear to come from 127.0.0.1
-    # ProtonMail Bridge currently expects that.
-    # It also allows us to bind to the real ports :)
-    socat TCP-LISTEN:25,fork TCP:127.0.0.1:1025 &
-    socat TCP-LISTEN:143,fork TCP:127.0.0.1:1143 &
-
-    # Start protonmail
-    # Fake a terminal, so it does not quit because of EOF...
-    rm -f faketty
-    mkfifo faketty
-    cat faketty | /protonmail/proton-bridge --cli $@
-
+    export GNUPGHOME=/tmp/gnupg
+    mkdir ${GNUPGHOME}
+    chmod 700 ${GNUPGHOME}
+    gpg --generate-key --batch /srv/protonmail/gpgparams
+    pkill gpg-agent
+    mv ${GNUPGHOME} ${HOME}/.gnupg
+    export GNUPGHOME=""
 fi
+
+# Initialize pass
+if [ ! -f ${HOME}/.password-store/.gpg-id ]; then
+    echo "Initializing pass"
+    pass init pass-key
+fi
+
+# Login
+if [ ! -f ${HOME}/.logged-in ]; then
+    if [[ -n ${PROTONMAIL_USERNAME} && -n ${PROTONMAIL_PASSWORD} ]]; then
+        echo "Logging in"
+        auto-login.exp $@
+        echo "" > ${HOME}/.logged-in
+    else
+        # Wait for manual login
+        echo "=============================================================================="
+        echo "PROTONMAIL_USERNAME or PROTONMAIL_PASSWORD is not set. Will not do auto login."
+        echo "Run docker exec -it protonmail login.sh to login manually."
+        echo "Waiting for manual login..."
+        while [ ! -f ${HOME}/.logged-in ]; do
+            sleep 5
+        done
+    fi
+fi
+
+echo "Logged in flag detected. Starting protonmail bridge"
+
+
+# socat will make the conn appear to come from 127.0.0.1
+# ProtonMail Bridge currently expects that.
+# It also allows us to bind to the real ports :)
+socat TCP-LISTEN:2025,fork TCP:127.0.0.1:1025 &
+socat TCP-LISTEN:2143,fork TCP:127.0.0.1:1143 &
+
+# Start protonmail
+# Fake a terminal, so it does not quit because of EOF...
+rm -f faketty
+mkfifo faketty
+cat faketty | proton-bridge --cli $@
