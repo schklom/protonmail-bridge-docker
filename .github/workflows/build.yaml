@@ -83,6 +83,6 @@ jobs:
           tags: |
             ${{ steps.repo.outputs.repo }}:beta
             ${{ steps.repo.outputs.repo }}:${{ steps.version.outputs.version }}
-            ${{ steps.repo.outputs.repo }}:${{ steps.version.outputs.bridge-version }}-${{ steps.version.outputs.version }}
+            ${{ steps.repo.outputs.repo }}:${{ steps.version.outputs.bridge_version }}-${{ steps.version.outputs.version }}
           labels: ${{ steps.docker_meta.outputs.labels }}
           push: ${{ github.event_name != 'pull_request' }}
