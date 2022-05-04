@@ -7,13 +7,11 @@ VERSION=`cat VERSION`
 # Clone new code
 git clone https://github.com/ProtonMail/proton-bridge.git
 cd proton-bridge
-git checkout v$VERSION
-
-ls /build
+git checkout ${BRIDGE_VERSION}
 
 # Patch HTTP REST frontend
 rm -rf internal/frontend/cli
-cp -r /build/http_rest_frontend/cli internal/frontend/cli
+cp -r /build/http_rest_frontend/cli internal/frontend/
 
 # Build
 if ! make build-nogui ; then

@@ -24,9 +24,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@master
-      - name: Set version
+      - name: Set bridge version
         id: version
-        run: echo "::set-output name=version::`cat VERSION`"
+        run: |
+          echo "::set-output name=bridge_version::$(cat BRIDGE_VERSION)"
+          echo "::set-output name=version::$(cat VERSION)"
       - name: Set repo
         id: repo
         run: if [[ $GITHUB_REF == "refs/heads/master" ]]; then echo "::set-output name=repo::${DOCKER_REPO}"; else echo "::set-output name=repo::${DOCKER_REPO_DEV}"; fi
@@ -45,6 +47,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           platforms: ${{ env.PLATFORMS }}
+          build-args: BRIDGE_VERSION=${{ steps.version.outputs.bridge_version }}
           push: true
           tags: localhost:5000/protonmail-bridge:latest
       - name: Scan image
@@ -75,11 +78,11 @@ jobs:
       - name: Push image
         uses: docker/build-push-action@v2
         with:
-          context: ./build
-          file: ./build/Dockerfile
           platforms: ${{ env.PLATFORMS }}
+          build-args: BRIDGE_VERSION=${{ steps.version.outputs.bridge_version }}
           tags: |
-            ${{ steps.repo.outputs.repo }}:build
-            ${{ steps.repo.outputs.repo }}:${{ steps.version.outputs.version }}-build
+            ${{ steps.repo.outputs.repo }}:beta
+            ${{ steps.repo.outputs.repo }}:${{ steps.version.outputs.version }}
+            ${{ steps.repo.outputs.repo }}:${{ steps.version.outputs.bridge-version }}-${{ steps.version.outputs.version }}
           labels: ${{ steps.docker_meta.outputs.labels }}
           push: ${{ github.event_name != 'pull_request' }}

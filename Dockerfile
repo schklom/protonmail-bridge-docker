@@ -3,9 +3,11 @@ FROM golang:1.15 AS build
 # Install dependencies
 RUN apt-get update && apt-get install -y libsecret-1-dev
 
+ARG BRIDGE_VERSION
+
 # Build
 WORKDIR /build/
-COPY build.sh VERSION /build/
+COPY build.sh /build/
 COPY http_rest_frontend /build/http_rest_frontend
 RUN bash build.sh
 
