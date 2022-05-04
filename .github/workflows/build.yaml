@@ -5,13 +5,8 @@ on:
     branches:
       - master
       - dev
-    paths:
-      - .github/workflows/build.yaml
-      - build/*
+      - http-rest
   pull_request:
-    paths:
-      - .github/workflows/build.yaml
-      - build/*
 
 env:
   DOCKER_REPO: shenxn/protonmail-bridge
@@ -31,7 +26,7 @@ jobs:
         uses: actions/checkout@master
       - name: Set version
         id: version
-        run: echo "::set-output name=version::`cat build/VERSION`"
+        run: echo "::set-output name=version::`cat VERSION`"
       - name: Set repo
         id: repo
         run: if [[ $GITHUB_REF == "refs/heads/master" ]]; then echo "::set-output name=repo::${DOCKER_REPO}"; else echo "::set-output name=repo::${DOCKER_REPO_DEV}"; fi
@@ -49,8 +44,6 @@ jobs:
       - name: Build image without push to registry
         uses: docker/build-push-action@v2
         with:
-          context: ./build
-          file: ./build/Dockerfile
           platforms: ${{ env.PLATFORMS }}
           push: true
           tags: localhost:5000/protonmail-bridge:latest
