@@ -3,9 +3,9 @@
 set -e
 
 # Generate gpg keys
-GNUPG_PATH=/protonmail/data/gnupg
+GNUPG_PATH=/protonmail/data/.gnupg
 export GNUPGHOME=${GNUPG_PATH}
-if [ ! -f ${GNUPG_PATH} ]; then
+if [ ! -d ${GNUPG_PATH} ]; then
     echo "Generateing gpg keys..."
     # set GNUPGHOME to a temp directory as a workaround for
     #
@@ -25,8 +25,8 @@ if [ ! -f ${GNUPG_PATH} ]; then
 fi
 
 # Initialize pass
-PASSWORD_STORE=/protonmail/data/password-store
-if [ ! -f ${PASSWORD_STORE} ]; then
+PASSWORD_STORE=/protonmail/data/.password-store
+if [ ! -d ${PASSWORD_STORE} ]; then
     echo "Initializing pass..."
     pass init pass-key
     # Move password store to /protonmail/data
