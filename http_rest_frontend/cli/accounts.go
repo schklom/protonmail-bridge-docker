@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/ProtonMail/proton-bridge/internal/config/settings"
 	"github.com/ProtonMail/proton-bridge/internal/frontend/types"
 	"github.com/julienschmidt/httprouter"
+	"github.com/sirupsen/logrus"
 )
 
 func (f *frontendCLI) loginAccount(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -23,33 +25,38 @@ func (f *frontendCLI) loginAccount(w http.ResponseWriter, r *http.Request, _ htt
 	password := r.FormValue("password")
 	twoFactor := r.FormValue("two-factor")
 	mailboxPassword := r.FormValue("mailbox-password")
+	addressMode := r.FormValue("address-mode")
+	if addressMode == "" {
+		addressMode = "combined"
+	}
+	if addressMode != "combined" && addressMode != "split" {
+		http.Error(w, fmt.Sprintf("%s is not a valid address mode. Choose from 'combined' and 'split'."), http.StatusBadRequest)
+		return
+	}
 	client, auth, err := f.bridge.Login(username, []byte(password))
 	if err != nil {
 		f.processAPIError(err)
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "Server error:", err.Error())
+		http.Error(w, fmt.Sprintf("Server error: %s", err.Error()), http.StatusUnauthorized)
 		return
 	}
 
 	if auth.HasTwoFactor() {
 		if twoFactor == "" {
 			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintln(w, "2FA enabled for the account but a 2FA code was not provided.")
+			http.Error(w, "2FA enabled for the account but a 2FA code was not provided.", http.StatusUnauthorized)
 			return
 		}
 		err = client.Auth2FA(context.Background(), twoFactor)
 		if err != nil {
 			f.processAPIError(err)
-			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintln(w, "Server error:", err.Error())
+			http.Error(w, fmt.Sprintf("Server error: %s", err.Error()), http.StatusUnauthorized)
 			return
 		}
 	}
 
 	if auth.HasMailboxPassword() {
 		if mailboxPassword == "" {
-			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintln(w, "Two password mode enabled but a mailbox password was not provided.")
+			http.Error(w, "Two password mode enabled but a mailbox password was not provided.", http.StatusUnauthorized)
 			return
 		}
 	} else {
@@ -58,11 +65,20 @@ func (f *frontendCLI) loginAccount(w http.ResponseWriter, r *http.Request, _ htt
 	user, err := f.bridge.FinishLogin(client, auth, []byte(mailboxPassword))
 	if err != nil {
 		f.processAPIError(err)
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "Server error:", err.Error())
+		http.Error(w, fmt.Sprintf("Server error: %s", err.Error()), http.StatusUnauthorized)
 		return
 	}
 	fmt.Fprintf(w, "Account %s was added successfully.\n", user.Username())
+
+	if addressMode == "split" {
+		err = user.SwitchAddressMode()
+		if err != nil {
+			logrus.Errorf("Failed to switch address mode of %s to split: %s", user.Username(), err.Error())
+			http.Error(w, "Failed to switch address mode to split", http.StatusInternalServerError)
+			return
+		}
+	}
+
 	f.printAccountInfo(w, user)
 }
 
@@ -135,10 +151,10 @@ func (f *frontendCLI) printAccountAddressInfo(w io.Writer, user types.User, addr
 	if f.settings.GetBool(settings.SMTPSSLKey) {
 		smtpSecurity = "SSL"
 	}
-	fmt.Fprintf(w, "IMAP port: %d\nIMAP security: %s\nSMTP port: %d\nSMTP security: %s\nUsername:  %s\nPassword:  %s\n",
-		143,
+	fmt.Fprintf(w, "IMAP port: %s\nIMAP security: %s\nSMTP port: %s\nSMTP security: %s\nUsername:  %s\nPassword:  %s\n",
+		os.Getenv("PROTON_IMAP_PORT"),
 		"STARTTLS",
-		25,
+		os.Getenv("PROTON_SMTP_PORT"),
 		smtpSecurity,
 		address,
 		user.GetBridgePassword(),

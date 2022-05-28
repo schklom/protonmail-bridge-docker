@@ -11,7 +11,7 @@ COPY build.sh /build/
 COPY http_rest_frontend /build/http_rest_frontend
 RUN bash build.sh
 
-FROM ubuntu:bionic
+FROM krallin/ubuntu-tini:bionic
 LABEL maintainer="Xiaonan Shen <s@sxn.dev>"
 
 EXPOSE 25/tcp
@@ -19,13 +19,15 @@ EXPOSE 143/tcp
 
 # Install dependencies and protonmail bridge
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends socat pass libsecret-1-0 ca-certificates dbus-x11 \
+    && apt-get install -y --no-install-recommends socat pass libsecret-1-0 ca-certificates curl gosu \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy bash scripts
-COPY gpgparams entrypoint.sh /srv/protonmail/
-
+COPY gpgparams entrypoint.sh run_protonmail_bridge.sh cli.sh /protonmail/bin/
 # Copy protonmail
-COPY --from=build /build/proton-bridge/proton-bridge /srv/protonmail/
+COPY --from=build /build/proton-bridge/proton-bridge /protonmail/bin
+ENV PATH "/protonmail/bin:${PATH}"
 
-ENTRYPOINT ["bash", "/srv/protonmail/entrypoint.sh"]
+VOLUME [ "/protonmail/data" ]
+
+ENTRYPOINT ["/usr/local/bin/tini", "--", "/protonmail/bin/entrypoint.sh"]

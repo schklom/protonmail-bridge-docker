@@ -2,7 +2,7 @@
 
 set -e
 
-URL_BASE=http://127.0.0.1:1080
+URL_BASE=http://127.0.0.1:${PROTON_MANAGEMENT_PORT:-1080}
 
 print_help() {
     echo "Available commands:"
@@ -24,12 +24,14 @@ account_login() {
     echo
     read -p "2FA Code (leave empty if not set): " TWO_FACTOR
     read -p "Mailbox Password (leave empty if not set): " MAILBOX_PASSWORD
+    read -p "Address Mode (combined / split): " ADDRESS_MODE
 
     curl ${URL_BASE}/accounts -XPUT \
         --data-urlencode "username=${USERNAME}" \
         --data-urlencode "password=${PASSWORD}" \
         --data-urlencode "two-factor=${TWO_FACTOR}" \
-        --data-urlencode "mailbox-password=${MAILBOX_PASSWORD}"
+        --data-urlencode "mailbox-password=${MAILBOX_PASSWORD}" \
+        --data-urlencode "address-mode=${ADDRESS_MODE}"
 }
 
 account_delete() {

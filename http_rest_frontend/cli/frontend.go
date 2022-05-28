@@ -146,7 +146,11 @@ func (f *frontendCLI) watchEvents() {
 
 func (f *frontendCLI) Loop() error {
 	f.loginWithEnv()
-	http.ListenAndServe(":1080", f)
+	managementPort := os.Getenv("PROTON_MANAGEMENT_PORT")
+	if managementPort == "" {
+		managementPort = "1080"
+	}
+	http.ListenAndServe(":"+managementPort, f)
 	return nil
 }
 
