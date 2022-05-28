@@ -17,9 +17,11 @@ LABEL maintainer="Xiaonan Shen <s@sxn.dev>"
 EXPOSE 25/tcp
 EXPOSE 143/tcp
 
+HEALTHCHECK --timeout=2s CMD nc -z 127.0.0.1 1025 && nc -z 127.0.0.1 1143
+
 # Install dependencies and protonmail bridge
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends socat pass libsecret-1-0 ca-certificates curl gosu \
+    && apt-get install -y --no-install-recommends socat pass libsecret-1-0 ca-certificates curl gosu netcat \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy bash scripts
