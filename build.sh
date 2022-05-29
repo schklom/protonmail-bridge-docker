@@ -13,6 +13,8 @@ cp -r /build/http_rest_frontend/cli internal/frontend/
 
 # Build
 if ! make build-nogui ; then
+	dpkg --print-architecture
+
 	# If build fails it's probably because it is a 32bit
 	# system and there was a overflow error on the parser
 	# This is a workaround for this problem found at:

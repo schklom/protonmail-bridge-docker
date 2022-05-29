@@ -104,7 +104,7 @@ func (f *frontendCLI) loginWithEnv() {
 		return
 	}
 	logrus.Infof("Account %s was added successfully.\n", user.Username())
-	if strings.ToLower(os.Getenv("PROTON_PRINT_ACCOUNT_INFO")) != "off" {
+	if strings.ToLower(os.Getenv("PROTON_PRINT_ACCOUNT_INFO")) != "false" {
 		f.printAccountInfo(os.Stdout, user)
 	}
 }

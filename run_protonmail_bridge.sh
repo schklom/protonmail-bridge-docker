@@ -61,10 +61,12 @@ cat <<EOF > ${PROTON_CONFIG_PATH}/bridge/prefs.json
 }
 EOF
 
+export PROTON_SMTP_PORT=${PROTON_SMTP_PORT:-25}
+export PROTON_IMAP_PORT=${PROTON_IMAP_PORT:=143}
 # socat will make the conn appear to come from 127.0.0.1
 # ProtonMail Bridge currently expects that.
 # It also allows us to bind to the real ports :)
-socat TCP-LISTEN:${PROTON_SMTP_PORT:=25},fork TCP:127.0.0.1:1025 &
-socat TCP-LISTEN:${PROTON_IMAP_PORT:=143},fork TCP:127.0.0.1:1143 &
+socat TCP-LISTEN:${PROTON_SMTP_PORT},fork TCP:127.0.0.1:1025 &
+socat TCP-LISTEN:${PROTON_IMAP_PORT},fork TCP:127.0.0.1:1143 &
 
 exec proton-bridge --cli "$@"
