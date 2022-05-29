@@ -34,4 +34,4 @@ if [ -d /protonmail/data/.config/protonmail ]; then
     chown proton:proton -R /protonmail/data
 fi
 
-exec gosu proton:proton run_protonmail_bridge.sh "$@"
+exec gosu proton:proton /protonmail/script/run_protonmail_bridge.sh "$@"

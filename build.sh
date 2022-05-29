@@ -12,9 +12,7 @@ rm -rf internal/frontend/cli
 cp -r /build/http_rest_frontend/cli internal/frontend/
 
 # Build
-if ! make build-nogui ; then
-	dpkg --print-architecture
-
+if (! make build-nogui) && [[ $(getconf LONG_BIT) == "32" ]]; then
 	# If build fails it's probably because it is a 32bit
 	# system and there was a overflow error on the parser
 	# This is a workaround for this problem found at:

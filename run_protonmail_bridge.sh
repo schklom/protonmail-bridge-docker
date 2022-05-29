@@ -18,7 +18,7 @@ if [ ! -d ${GNUPG_PATH} ]; then
     export GNUPGHOME=/tmp/gnupg
     mkdir ${GNUPGHOME}
     chmod 700 ${GNUPGHOME}
-    gpg --generate-key --batch /protonmail/bin/gpgparams
+    gpg --generate-key --batch /protonmail/script/gpgparams
     pkill gpg-agent
     mv ${GNUPGHOME} ${GNUPG_PATH}
     export GNUPGHOME=${GNUPG_PATH}

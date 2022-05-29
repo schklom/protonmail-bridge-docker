@@ -46,9 +46,9 @@ All data are stored under `/protonmail/data`.
 
 ### CLI
 
-2.0 comes with a CLI to easily interact with the bridge. There is no need to modify the entrypoint, manually kill any process, or restart the container when you are done. Everything you need is to `exec` into the container and run `cli.sh`. With that, you can add, remove, list accounts and print account info. Changing the address mode of an account is currently not supported. To do so, simply delete the account and add it back again. Example:
+2.0 comes with a CLI to easily interact with the bridge. There is no need to modify the entrypoint, manually kill any process, or restart the container when you are done. Everything you need is to `exec` into the container and run `cli`. With that, you can add, remove, list accounts and print account info. Changing the address mode of an account is currently not supported. To do so, simply delete the account and add it back again. Example:
 ```
-➜ docker exec -it protonmail cli.sh
+➜ docker exec -it protonmail cli
 CLI to interacte with Proton Bridge HTTP REST interface
 Available commands:
  login:            Calls up the login procedure to add or connect accounts.

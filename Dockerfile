@@ -27,11 +27,11 @@ RUN curl -sSL https://github.com/krallin/tini/releases/download/v0.19.0/tini-$(d
     && chmod +x /tini
 
 # Copy bash scripts
-COPY gpgparams entrypoint.sh run_protonmail_bridge.sh cli.sh /protonmail/bin/
+COPY gpgparams entrypoint.sh run_protonmail_bridge.sh cli.sh /protonmail/script/
+RUN ln -s /protonmail/script/cli.sh /usr/local/bin/cli
 # Copy protonmail
-COPY --from=build /build/proton-bridge/proton-bridge /protonmail/bin
-ENV PATH "/protonmail/bin:${PATH}"
+COPY --from=build /build/proton-bridge/proton-bridge /usr/local/bin/
 
 VOLUME [ "/protonmail/data" ]
 
-ENTRYPOINT ["/tini", "--", "/protonmail/bin/entrypoint.sh"]
+ENTRYPOINT ["/tini", "--", "/protonmail/script/entrypoint.sh"]
