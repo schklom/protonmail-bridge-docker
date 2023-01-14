@@ -21,6 +21,10 @@ env:
 jobs:
   build-binary:
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        arch: ["amd64", "arm64", "arm", "riscv64"]
+      fail-fast: true
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -42,9 +46,25 @@ jobs:
           check-latest: true
       - name: Install dependencies
         run: sudo apt-get install -y --no-install-recommends build-essential libsecret-1-dev
+      - name: Download go dep
+        if: ${{ matrix.arch == 'arm' }}
+        working-directory: proton-bridge
+        # Build once to download deps.
+        # This step is expected to fail.
+        run: make build-nogui || true
+        env:
+          GOARCH: ${{ matrix.arch }}
+      - name: Patch for 32 bit arch
+        if: ${{ matrix.arch == 'arm' }}
+        # For 32bit architectures, there was a overflow error on the parser
+        # This is a workaround for this problem found at:
+        #   https://github.com/antlr/antlr4/issues/2433#issuecomment-774514106
+        run: find $(go env GOPATH)/pkg/mod/github.com/\!proton\!mail/go-rfc5322*/ -type f -exec sed -i.bak 's/(1<</(int64(1)<</g' {} +
       - name: Build binary
         working-directory: proton-bridge
         run: make build-nogui
+        env:
+          GOARCH: ${{ matrix.arch }}
   # build:
   #   runs-on: ubuntu-latest
   #   services:
